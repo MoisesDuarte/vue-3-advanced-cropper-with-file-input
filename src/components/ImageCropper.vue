@@ -23,18 +23,25 @@
 		
 		<section v-if="croppedImage">
 			<div style="text-align: center">
+				<div>Raw Image:</div>
 				<img
 					:src='croppedImage' 
+					class="image-preview"
+				/>
+
+				<div>Compressed Image:</div>
+				<img
+					:src='compressedImage' 
 					class="image-preview"
 				/>
 			</div>
 
 			<button
-				@click="croppedImage = null">
+				@click="croppedImage = null; compressedImage = null;">
 				Cancel 
 			</button>
 		</section>
-	</main>
+	</main>  
 </template>
 
 <script>
@@ -49,14 +56,23 @@ export default {
 	data() {
 	    return {
 				croppedImage: null,
+				compressedImage: null,
 				uploadedImage: null,
 	    }
 	},
 	methods: {
-		crop() {
+		async crop() {
 			const { coordinates, canvas, } = this.$refs.cropper.getResult();
 			this.coordinates = coordinates;
-			if (canvas) this.croppedImage = canvas.toDataURL();
+
+			if (canvas) {
+				this.croppedImage = canvas.toDataURL(); 
+				this.compressedImage = await this.resizeDataUrlImage({
+					dataUrl: canvas.toDataURL(),
+					width: 100,
+					height: 100,
+				});
+			};
 		},
 		onFileChange(event) {
 			const input = event.target;
@@ -69,6 +85,26 @@ export default {
 				reader.readAsDataURL(input.files[0]);
 			}
 		},
+		resizeDataUrlImage({ dataUrl, width, height }) {
+			return new Promise((resolve) => {
+				const img = new Image();
+
+				img.onload = () => {
+					const canvas = document.createElement('canvas');
+					const ctx = canvas.getContext('2d');
+
+					canvas.width = width;
+					canvas.height = height;
+
+					ctx.drawImage(img, 0, 0, width, height);
+
+					const resizedDataUrl = canvas.toDataURL();
+					resolve(resizedDataUrl);
+				};
+
+				img.src = dataUrl;
+			});
+		}
 	},
 }
 </script>
