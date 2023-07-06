@@ -45,6 +45,7 @@
 </template>
 
 <script>
+import { resizeDataUrlImage } from '../helpers/image.helper';
 import { Cropper, CircleStencil } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 
@@ -62,12 +63,12 @@ export default {
 	},
 	methods: {
 		async crop() {
-			const { coordinates, canvas, } = this.$refs.cropper.getResult();
+			const { coordinates, canvas } = this.$refs.cropper.getResult();
 			this.coordinates = coordinates;
 
 			if (canvas) {
 				this.croppedImage = canvas.toDataURL(); 
-				this.compressedImage = await this.resizeDataUrlImage({
+				this.compressedImage = await resizeDataUrlImage({
 					dataUrl: canvas.toDataURL(),
 					width: 100,
 					height: 100,
@@ -78,32 +79,9 @@ export default {
 			const input = event.target;
 			if (input.files && input.files[0]) {
 				const reader = new FileReader();
-				reader.onload = (e) => {
-					this.uploadedImage = e.target.result;
-				};
-
+				reader.onload = (e) => { this.uploadedImage = e.target.result; };
 				reader.readAsDataURL(input.files[0]);
 			}
-		},
-		resizeDataUrlImage({ dataUrl, width, height }) {
-			return new Promise((resolve) => {
-				const img = new Image();
-
-				img.onload = () => {
-					const canvas = document.createElement('canvas');
-					const ctx = canvas.getContext('2d');
-
-					canvas.width = width;
-					canvas.height = height;
-
-					ctx.drawImage(img, 0, 0, width, height);
-
-					const resizedDataUrl = canvas.toDataURL();
-					resolve(resizedDataUrl);
-				};
-
-				img.src = dataUrl;
-			});
 		}
 	},
 }
